@@ -12,7 +12,7 @@ redis.call("ZREMRANGEBYSCORE", key, 0, windowStart)
 local currentCount = redis.call("ZCARD", key)
 
 if currentCount >= limit then
-    local oldest = redis.call("ZRANGE", key, 0, 0 "WITHSCORES")
+    local oldest = redis.call("ZRANGE", key, 0, 0, "WITHSCORES")
     local oldestTimeStamp = now
 
     if oldest[2] then
@@ -29,4 +29,4 @@ redis.call("PEXPIRE", key, windowMs)
 
 local remaining = limit - (currentCount + 1)
 
-return {1, limit, remaining}
+return {1, limit, remaining, 0}

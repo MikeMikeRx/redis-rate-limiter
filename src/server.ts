@@ -1,6 +1,6 @@
 import express, { type Request, type Response, type NextFunction } from "express";
-import { redis } from "./redis";
-import { SlidingWindowRateLimiter } from "./limiter";
+import { redis } from "./redis.js";
+import { SlidingWindowRateLimiter } from "./limiter.js";
 
 const app = express();
 const limiter = new SlidingWindowRateLimiter(redis);

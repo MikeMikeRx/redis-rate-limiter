@@ -2,8 +2,8 @@
   "name": "redis-rate-limiter",
   "version": "1.0.0",
   "description": "Redis sliding-window rate limiter built with TypeScript and Express",
-  "private": "true",
-  "type:": "module",
+  "private": true,
+  "type": "module",
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
@@ -28,7 +28,7 @@
   },
   "homepage": "https://github.com/MikeMikeRx/redis-rate-limiter#readme",
   "dependencies": {
-    "express": "^4.2.1",
+    "express": "^4.21.2",
     "ioredis": "^5.10.0"
   },
   "devDependencies": {
@@ -41,6 +41,5 @@
   },
   "directories": {
     "test": "test"
-  },
-  "type": "commonjs"
+  }
 }
