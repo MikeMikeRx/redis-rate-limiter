@@ -40,23 +40,23 @@ async function rateLimitMiddleware(req: Request, res: Response, next: NextFuncti
     } catch (error) {
         next(error);
     }
-
-    app.get("/health", (_req, res) => {
-        res.json({ ok: true });
-    });
-
-    app.get("/limited", rateLimitMiddleware, (_req, res) => {
-        res.json({ message: "Request allowed" });
-    });
-
-    app.use((error: unknown, _req: Request, res: Response, _next: NextFunction) => {
-        console.error(error);
-        res.status(500).json({ message: "Internal server error" });
-    });
-
-    const port = Number(process.env.PORT ?? 3000);
-
-    app.listen(port, () => {
-        console.log(`Server running on http://localhost:${port}`);
-    });
 }
+    
+app.get("/health", (_req, res) => {
+    res.json({ ok: true });
+});
+
+app.get("/limited", rateLimitMiddleware, (_req, res) => {
+    res.json({ message: "Request allowed" });
+});
+
+app.use((error: unknown, _req: Request, res: Response, _next: NextFunction) => {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error" });
+});
+
+const port = Number(process.env.PORT ?? 3000);
+
+app.listen(port, () => {
+    console.log(`Server running on http://localhost:${port}`);
+});
