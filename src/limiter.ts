@@ -1,4 +1,11 @@
+import fs from "node:fs";
+import path from "node:path";
 import type { Redis } from "ioredis";
+
+const script = fs.readFileSync(
+  path.join(process.cwd(), "src/lua/slidingWindow.lua"),
+  "utf8"
+);
 
 export type RateLimitResult = {
   allowed: boolean;
@@ -8,6 +15,17 @@ export type RateLimitResult = {
 };
 
 export class SlidingWindowRateLimiter {
+  private sha: string | null = null;
+
+  private async getScriptSha(): Promise<string> {
+    if (this.sha) {
+      return this.sha;
+    }
+
+    this.sha = (await this.redis.script("LOAD", script)) as string;
+    return this.sha;
+  }
+
   constructor(private readonly redis: Redis) {}
 
   async limit(params: {
@@ -22,45 +40,25 @@ export class SlidingWindowRateLimiter {
     const requestId = `${now}-${Math.random().toString(36).slice(2)}`;
     const redisKey = `rate_limit:${key}`;
 
-    const pipeline = this.redis.multi();
+    const sha = await this.getScriptSha();
 
-    pipeline.zremrangebyscore(redisKey, 0, windowStart);
-    pipeline.zcard(redisKey);
-    pipeline.zadd(redisKey, now, requestId);
-    pipeline.pexpire(redisKey, windowMs);
+    const result = await this.redis.evalsha(
+      sha,
+      1,
+      redisKey,
+      now,
+      windowMs,
+      limit,
+      requestId
+    ) as [number, number, number, number];
 
-    const results = await pipeline.exec();
-
-    if (!results) {
-      throw new Error("Redis transaction failed");
-    }
-
-    const currentCountRaw = results[1]?.[1];
-    const currentCount = typeof currentCountRaw === "number" ? currentCountRaw : Number(currentCountRaw);
-
-    const allowed = currentCount < limit;
-    const remaining = allowed ? limit - (currentCount + 1) : 0;
-
-    if (!allowed) {
-      await this.redis.zrem(redisKey, requestId);
-
-      const oldest = await this.redis.zrange(redisKey, 0, 0, "WITHSCORES");
-      const oldestTimestamp = oldest.length >= 2 ? Number(oldest[1]) : now;
-      const retryAfterMs = Math.max(0, oldestTimestamp + windowMs - now);
-
-      return {
-        allowed: false,
-        limit,
-        remaining: 0,
-        retryAfterMs
-      };
-    }
+    const [allowed, limitValue, remaining, retryAfterMs] = result;
 
     return {
-      allowed: true,
-      limit,
+      allowed: Boolean(allowed),
+      limit: limitValue,
       remaining,
-      retryAfterMs: 0
+      retryAfterMs
     };
   }
 }
