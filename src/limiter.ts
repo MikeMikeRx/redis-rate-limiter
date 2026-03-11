@@ -36,13 +36,15 @@ export class SlidingWindowRateLimiter {
     const { key, limit, windowMs } = params;
 
     const now = Date.now();
-    const windowStart = now - windowMs;
     const requestId = `${now}-${Math.random().toString(36).slice(2)}`;
     const redisKey = `rate_limit:${key}`;
 
     const sha = await this.getScriptSha();
 
-    const result = await this.redis.evalsha(
+    let result: [number, number, number, number]
+
+  try {
+    result = (await this.redis.evalsha(
       sha,
       1,
       redisKey,
@@ -50,7 +52,25 @@ export class SlidingWindowRateLimiter {
       windowMs,
       limit,
       requestId
-    ) as [number, number, number, number];
+    )) as [number, number, number, number];
+  } catch (err) {
+    if (err instanceof Error && err.message.includes("NOSCRIPT")) {
+      this.sha = null;
+      const newSha = await this.getScriptSha();
+
+      result = (await this.redis.evalsha(
+        newSha,
+        1,
+        redisKey,
+        now,
+        windowMs,
+        limit,
+        requestId
+      )) as [number, number, number, number];
+    } else {
+      throw err;
+    }
+  }
 
     const [allowed, limitValue, remaining, retryAfterMs] = result;
 
