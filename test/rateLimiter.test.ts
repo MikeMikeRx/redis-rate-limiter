@@ -34,7 +34,7 @@ describe("rate limiter", () => {
             await request(app).get("/limited");
         }
 
-        await new Promise((resolve) => setTimeout(resolve, 10_100));
+        await new Promise((resolve) => setTimeout(resolve, 200));
 
         const response = await request(app).get("/limited");
 

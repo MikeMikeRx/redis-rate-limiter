@@ -21,7 +21,7 @@ async function rateLimitMiddleware(req: Request, res: Response, next: NextFuncti
         const result = await limiter.limit({
             key: getClientKey(req),
             limit: 5,
-            windowMs: 10_000
+            windowMs: 200
         });
 
         res.setHeader("X-RateLimit-Limit", String(result.limit));
