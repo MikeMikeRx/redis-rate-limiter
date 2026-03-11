@@ -1,34 +1,63 @@
 # Redis Rate Limiter
 
-Sliding-window rate limiter built with Node.js, TypeScript, Express, and Redis.
+A Redis-backed rate limiter implemented in **TypeScript** using the **sliding window algorithm** and an **atomic Lua script**.
 
-🚧 Work in progress — project is actively evolving.
+This project shows a simple implementation of a Redis-based rate limiter using TypeScript, Express, and Lua.
+
+---
 
 ## Features
 
-- Sliding-window algorithm
-- Per-client request tracking
-- Redis-backed state
-- Retry-After support
-- Rate-limit headers
+- Sliding window rate limiting
+- Redis sorted set storage
+- Atomic execution with Lua
+- Automatic script reload on Redis restart (`NOSCRIPT` handling)
+- Express middleware integration
+- Integration tests with Vitest + Supertest
 
-## Algorithm
-
-For each request:
-1. Remove expired timestamps from Redis sorted set
-2. Count active requests inside the current window
-3. Reject if count is at limit
-4. Add current request timestamp
-5. Set Redis key expiration
+---
 
 ## Example policy
 
-- 5 requests
-- per 10 seconds
-- per IP
+5 requests / 10 seconds / per client (IP)
 
-## Run locally
+If the limit is exceeded: `HTTP 429 Too Many Requests`
+
+---
+
+## Tech stack
+
+- TypeScript
+- Express
+- Redis
+- Lua
+- Vitest
+- Supertest
+
+---
+
+## Running locally
+
+Start Redis:
 
 ```bash
+docker run --rm -p 6379:6379 redis:7
+```
+install dependencies:
+```bash
 npm install
+```
+Start server:
+```bash
 npm run dev
+```
+Endpoints:
+```bash
+GET /health
+GET /limited
+```
+
+Running tests:
+```bash
+npm run test
+```
