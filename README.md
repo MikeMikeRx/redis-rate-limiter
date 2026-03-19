@@ -61,3 +61,29 @@ Running tests:
 ```bash
 npm run test
 ```
+
+---
+
+## Limitations
+
+- This implementation depends on a single Redis instance.
+- It does not address cross-region rate limiting.
+- It assumes application and Redis clocks are reasonably aligned.
+
+## Trade-offs
+
+- Sliding window is more accurate than a fixed window, but requires more Redis operations.
+- Redis + Lua keeps the implementation simple, but introduces a dependency on Redis availability.
+- Per-client limits are easy to apply, but do not cover global or tenant-wide rate limiting.
+
+## Failure scenarios
+
+- If Redis is unavailable, rate limiting cannot be evaluated.
+- If Redis restarts, the Lua script cache is lost and must be reloaded.
+- Under very high request volume, Redis becomes the main bottleneck.
+
+## Design decisions
+
+- Redis sorted sets are used to store request timestamps inside the active window.
+- Lua is used to execute the rate limit check atomically.
+- EVALSHA is used to avoid sending the full script on every request.
